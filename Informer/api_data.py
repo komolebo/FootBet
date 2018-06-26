@@ -2,21 +2,22 @@ import json
 import urllib
 import urllib2
 
-REFRESH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI1YjJkOGYxNWU5MWVkNzMzMTE4NWI5MzgiLCJpYXQiOjE1Mjk3MTI0NjV9.N3HY80Hya0EuwQVJfPzNZ3xKVUc7SyvWhYRgz2nOEtU'
-
 
 class Connector:
+    api_url = "https://api.sportdeer.com"
+    REFRESH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' \
+                    '.eyJ1c2VySWQiOiI1YjJkOGYxNWU5MWVkNzMzMTE4NWI5MzgiLCJpYXQiOjE1Mjk3MTI0NjV9' \
+                    '.N3HY80Hya0EuwQVJfPzNZ3xKVUc7SyvWhYRgz2nOEtU '
+
     def __init__(self):
         pass
-
-    api_url = "https://api.sportdeer.com"
 
     def request(self, url):
         link = self.api_url + url + '?access_token=' + self.get_access_token()
         return urllib.urlopen(link).read()
 
     def get_access_token(self):
-        link = self.api_url + '/v1/accessToken?refresh_token=' + REFRESH_TOKEN
+        link = self.api_url + '/v1/accessToken?refresh_token=' + self.REFRESH_TOKEN
         response = urllib.urlopen(link)
         data = json.load(response)
         return data['new_access_token']
@@ -29,8 +30,9 @@ class Connector:
             return 0
 
 
-########################################################################
 class AbstractFootballObj:
+    connector = Connector()
+
     def __init__(self, id, name):
         self.id = id
         self.name = name
@@ -98,7 +100,7 @@ class Fixture(AbstractFootballObj):
         self.round = round
 
     def request_fixture_data(self):
-        resp = json.loads(connector.request(self.url))['docs'][0]
+        resp = json.loads(self.connector.request(self.url))['docs'][0]
         self.load_from_json(resp)
 
     def load_from_json(self, js):
@@ -147,7 +149,7 @@ class Stage(AbstractFootballObj):
         self.url = '/v1/stages/' + str(id)
 
     def request_fixtures(self):
-        fixtures = json.loads(connector.request(self.url + '/fixtures'))['docs']
+        fixtures = json.loads(self.connector.request(self.url + '/fixtures'))['docs']
         self.fixture_list = []
         for fixture in fixtures:
             id = fixture['_id']
@@ -158,15 +160,14 @@ class Stage(AbstractFootballObj):
         return self.fixture_list
 
 
-class Season:
+class Season(AbstractFootballObj):
     def __init__(self, id, name):
-        self.id = id
-        self.name = name
+        AbstractFootballObj.__init__(self, id, name)
         self.url = '/v1/seasons/' + str(id)
         self.stages_list = None
 
     def request_stages(self):
-        stages = json.loads(connector.request(self.url + '/stages'))['docs']
+        stages = json.loads(self.connector.request(self.url + '/stages'))['docs']
         # print stages
         self.stages_list = []
         for stage in stages:
@@ -177,15 +178,14 @@ class Season:
         return self.stages_list
 
 
-class League:
+class League(AbstractFootballObj):
     def __init__(self, id, name):
-        self.id = id
-        self.name = name
+        AbstractFootballObj.__init__(self, id, name)
         self.url = '/v1/leagues/' + str(id)
         self.season_list = None
 
     def request_seasons(self):
-        seasons = json.loads(connector.request(self.url + '/seasons'))['docs']
+        seasons = json.loads(self.connector.request(self.url + '/seasons'))['docs']
         self.season_list = []
         for season in seasons:
             id = season['_id']
@@ -195,15 +195,14 @@ class League:
         return self.season_list
 
 
-class Country:
+class Country(AbstractFootballObj):
     def __init__(self, name, id):
-        self.id = id
-        self.name = name
+        AbstractFootballObj.__init__(self, id, name)
         self.url = '/v1/countries/' + str(id)
         self.league_list = None
 
     def request_leagues(self):
-        leagues = json.loads(connector.request(self.url + '/leagues'))['docs']
+        leagues = json.loads(self.connector.request(self.url + '/leagues'))['docs']
         self.league_list = []
         for league in leagues:
             id = league['_id']
@@ -213,11 +212,19 @@ class Country:
         return self.league_list
 
 
+def search_player_by_name():
+    pass
+
+
+def get_players_list():
+    pass
+
+
 connector = Connector()
 
-if not connector.check_connection():
-    print 'No connection'
-    exit(0)
+# if not connector.check_connection():
+#     print 'No connection'
+#     exit(0)
 
 print connector.get_access_token()
 
