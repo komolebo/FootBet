@@ -1,0 +1,1 @@
+Current folder contains all saved data in NVM
