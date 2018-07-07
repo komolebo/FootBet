@@ -20,6 +20,9 @@ def analyze_match_page(url):
     for player1, player2 in zip(team_home, team_away):
         print "!%30s %30s!" % (player1[0], player2[0])
 
+    events = analyze_match_events(match_page)
+    print events
+
 
 def analyze_match_general_info(match_page):
     general_tags = match_page.findAll('div', {'class': 'matchStatsInt'})
@@ -31,9 +34,9 @@ def analyze_match_general_info(match_page):
     return date, referee, stadium, time, visitee
 
 
-def analyze_match_team_score(parsed_page):
+def analyze_match_team_score(match_page):
     # score
-    score_tags = parsed_page.findAll('div', {'class': 'matchReportTitle'})
+    score_tags = match_page.findAll('div', {'class': 'matchReportTitle'})
     # for i in score_tag:
     #     print i #score_tag
     score_tag = score_tags[0]
@@ -42,6 +45,14 @@ def analyze_match_team_score(parsed_page):
     away_team = score_tags[2].text
     score = score_tags[1].text
     return [away_team, home_team, score]
+
+
+def analyze_match_events(match_page):
+    events = []
+    event_tags = match_page.findAll('div', {'class': 'matchReportSubInt'})
+    for event in event_tags:
+        events.append((event.find('p').text, event.find('small').text))
+    return events
 
 
 def analyze_tag_player(player_tag):

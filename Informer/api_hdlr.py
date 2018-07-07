@@ -1,7 +1,7 @@
 from BeautifulSoup import BeautifulSoup
 
 from Informer.api_data import req_url, CommonAPI
-from Informer.api_parse import get_leagues, get_seasons_for_leagues, get_matches_from_season
+from Informer.api_parse import get_leagues, get_seasons_for_leagues, get_matches_from_season, analyze_match_page
 
 
 # ********* algorithms to update local data ********* #
@@ -23,8 +23,8 @@ def deep_check():  # walk through main leagues found on main url
 
 
 if __name__ == '__main__':
-    # analyze_match_page(
-    #     'https://www.statbunker.com/competitions/MatchDetails/Premier-League-17/18/West-Ham-United-VS-Everton?comp_id=586&match_id=95485&date=13-May-2018')
-    deep_check()
+    analyze_match_page(
+        'https://www.statbunker.com/competitions/MatchDetails/Premier-League-17/18/West-Ham-United-VS-Everton?comp_id=586&match_id=95485&date=13-May-2018')
+    # deep_check()
     # for league in api_leagues:
     #     print league
