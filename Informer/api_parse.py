@@ -1,7 +1,7 @@
 from BeautifulSoup import BeautifulSoup
 
-from Informer.api_data import req_url, HTML_League, HTML_Season, CommonAPI
-from Informer.nvm import Match, NVM
+from Informer.api_data import req_url, HTML_League, HTML_Season, CommonAPI, bug_fix, HTML_Club
+from Informer.nvm import Match, NVM, Club
 
 
 def analyze_match_page(url):
@@ -9,7 +9,6 @@ def analyze_match_page(url):
 
     match = Match(id, url)
     if not NVM.check_obj_in_nvm(NVM.PATH_MATCHES, id):  # match.exists_in_nvm():
-        print 'analyzing %s' % url
         page = req_url(url)
         match_page = BeautifulSoup(page)
 
@@ -134,7 +133,7 @@ def get_matches_from_season(league_obj, season_obj):
             parsed_page = BeautifulSoup(page)
 
             html_matches = parsed_page.findAll('span', {'class': 'matchVs'})
-            if not len(html_matches):
+            if not len(html_matches):  # All matches are processed
                 break
             for html_match in html_matches:
                 match_url = html_match.find('a')['href']
@@ -146,3 +145,33 @@ def get_matches_from_season(league_obj, season_obj):
         # for season in league_obj.seasons:
         # matches_url = parsed_page.findAll('a', {'title': season + ' Latest results'})
         # print matches_url, season
+
+
+def get_clubs_from_league(league_obj):
+    clubs_for_league = []
+
+    league_url = league_obj.url
+
+    league_page = req_url(league_url)
+    league_page = bug_fix(league_page)
+    parsed_league_page = BeautifulSoup(league_page)
+
+    html_clubs = parsed_league_page.findAll('td', {'class': 'mob tdInline'})
+    for html_club in html_clubs:
+        # TODO add parsing for cups
+        club_name = html_club.find('a').text
+        club_href = html_club.find('a')['href']
+        club_id = club_href.split('club_id=', 1)[1]
+
+        clubs_for_league.append(HTML_Club(club_id, club_name))
+        Club.add_club(club_id, club_name)
+
+        print club_id, '::', club_name
+        # if not (html_club.find('a').has_key('href')):
+        #     print 'error', html_club
+
+    return clubs_for_league
+
+
+def analyze_club(comp_id, club_id):
+    pass

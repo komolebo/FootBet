@@ -1,5 +1,6 @@
 # NVM Handler - Non Volatile Memory Handler
 # module should arrange store all info to file system
+import datetime
 import json
 
 did_table = {}  # table of all did are present in project
@@ -24,15 +25,6 @@ class DID:  # represents data identifier to convert into JSON
         if len(data):
             with open(self.path + str(self.ID) + '.json', 'w') as f:
                 json.dump(data, f)
-
-    # def import_from_file(self):
-    #     try:
-    #         with open(self.path + str(self.ID) + '.json') as f:
-    #             self.data = json.load(f)
-    #     except EnvironmentError:
-    #         print 'env imp error'
-    #         self.data = {}
-    #         pass
 
     def exists_in_nvm(self):
         try:
@@ -84,14 +76,44 @@ class Match(DID):
 
 class Player(DID):
     def __init__(self, ID, url):
-        DID.__init__(self, ID, url)
         self.path = DID.path + 'Players/'
+        DID.__init__(self, ID, url)
 
 
 class Club(DID):
+    list_clubs = {}
+    list_clubs_path = DID.path + 'Clubs/__list__.json'
+
+    @staticmethod
+    def load_club_list():
+        try:
+            with open(Club.list_clubs_path) as f:
+                Club.list_clubs = json.load(f)
+        except EnvironmentError:
+            pass
+
+    @staticmethod
+    def export_club_list():
+        with open(Club.list_clubs_path, 'w') as f:
+            json.dump(Club.list_clubs, f)
+
+    @staticmethod
+    def add_club(club_id, club_name):
+        if club_id not in Club.list_clubs.keys():
+            Club.list_clubs[club_id] = club_name
+            Club.export_club_list()
+
     def __init__(self, ID, url):
-        DID.__init__(self, ID, url)
         self.path = DID.path + 'Clubs/'
+        self.matches = None
+        self.last_updated = None
+        DID.__init__(self, ID, url)
+
+    def add_match(self, match_id):
+        if not (match_id in self.matches):
+            self.last_updated = datetime.date.today()
+            self.matches.append(match_id)
+            self.export_to_file()
 
 
 class NVM:
