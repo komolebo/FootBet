@@ -1,27 +1,38 @@
 from BeautifulSoup import BeautifulSoup
 
 from Informer.api_data import req_url, HTML_League, HTML_Season, CommonAPI
+from Informer.nvm import Match, NVM
 
 
 def analyze_match_page(url):
-    print 'analyzing %s' % url
+    id = url.split('match_id=', 1)[1].split('&')[0]
 
-    page = req_url(url)
-    match_page = BeautifulSoup(page)
+    match = Match(id, url)
+    if not NVM.check_obj_in_nvm(NVM.PATH_MATCHES, id):  # match.exists_in_nvm():
+        print 'analyzing %s' % url
+        page = req_url(url)
+        match_page = BeautifulSoup(page)
 
-    away_team, home_team, score = analyze_match_team_score(match_page)
-    print "%s vs %s [%s]" % (home_team, away_team, score)
+        away_team, home_team, score = analyze_match_team_score(match_page)
+        print "%s vs %s [%s]" % (home_team, away_team, score)
 
-    date, referee, stadium, time, visitee = analyze_match_general_info(match_page)
-    print date, time, stadium, referee, visitee
+        date, referee, stadium, time, visitee = analyze_match_general_info(match_page)
+        # print date, time, stadium, referee, visitee
 
-    team_home, team_away, sub_home, sub_away = analyze_match_squads(match_page)
-    # print team_home, team_away, sub_home, sub_away
-    for player1, player2 in zip(team_home, team_away):
-        print "!%30s %30s!" % (player1[0], player2[0])
+        squad_home, squad_away, sub_squad_home, sub_squad_away = analyze_match_squads(match_page)
+        # print squad_home, squad_away, sub_squad_home, sub_squad_away
+        # for player1, player2 in zip(squad_home, squad_away):
+        #     print "!%30s %30s!" % (player1[0], player2[0])
 
-    events = analyze_match_events(match_page)
-    print events
+        events = analyze_match_events(match_page)
+        # print events
+        match.set_general_info(referee, stadium, date, time, events, visitee)
+        match.set_main_info(score, home_team, away_team)
+        match.set_squads(squad_home, squad_away, sub_squad_home, sub_squad_away)
+        # match.set_data()
+        match.export_to_file()
+    else:
+        print 'skipping %s' % url
 
 
 def analyze_match_general_info(match_page):
