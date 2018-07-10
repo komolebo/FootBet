@@ -173,5 +173,21 @@ def get_clubs_from_league(league_obj):
     return clubs_for_league
 
 
-def analyze_club(comp_id, club_id):
-    pass
+def get_matches_from_club(comp_id, club_id):
+    for offset in range(0, 10000, 10):
+        try:
+            url = CommonAPI.url + (
+                    'competitions/LastMatches?comp_id=%s&club_id=%s&offset=%s' % (comp_id, club_id, offset))
+            # Here we should grab all matches from season
+            page = req_url(url)
+            parsed_page = BeautifulSoup(page)
+
+            html_matches = parsed_page.findAll('span', {'class': 'matchVs'})
+            if not len(html_matches):  # All matches are processed
+                break
+            for html_match in html_matches:
+                match_url = html_match.find('a')['href']
+                analyze_match_page(match_url)
+        except Exception:
+            print 'Pages end for club=%u comp=%u' % (club_id, comp_id)
+            break
