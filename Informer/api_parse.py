@@ -1,7 +1,7 @@
 from BeautifulSoup import BeautifulSoup
 
 from Informer.api_data import req_url, HTML_League, HTML_Season, CommonAPI, bug_fix, HTML_Club
-from Informer.nvm import Match, NVM, Club
+from Informer.nvm import Match, NVM, Team
 
 
 def analyze_match_page(url):
@@ -103,7 +103,10 @@ def get_leagues(parsed_page):
     return leagues
 
 
-def get_seasons_for_league(league_obj, parsed_league_page):
+def get_seasons_for_league(league_url):
+    league_page = req_url(league_url)
+    parsed_league_page = BeautifulSoup(league_page)
+    seasons = []
     # search all seasons for league
     seasons_url = parsed_league_page.findAll('select', {'name': 'comp_id'})
     for season in seasons_url:
@@ -111,16 +114,15 @@ def get_seasons_for_league(league_obj, parsed_league_page):
             comp_id = option['value']
             # if not 'Select' in option.text:
             if int(comp_id) >= 0:
-                league_obj.seasons.append(HTML_Season(comp_id, option.text))
+                seasons.append(HTML_Season(comp_id, option.text))
         # print season.findAll('option')
+    return seasons
     # TODO
 
 
 def get_seasons_for_leagues(api_leagues):
     for league_obj in api_leagues:
-        league_page = req_url(league_obj.url)
-        parsed_league_page = BeautifulSoup(league_page)
-        get_seasons_for_league(league_obj, parsed_league_page)
+        league_obj.seasons = get_seasons_for_league(league_obj.url)
 
 
 def get_matches_from_season(league_obj, season_obj):
@@ -147,28 +149,27 @@ def get_matches_from_season(league_obj, season_obj):
         # print matches_url, season
 
 
-def get_clubs_from_league(league_obj):
+def get_clubs_from_season_url(comp_id):
     clubs_for_league = []
 
-    league_url = league_obj.url
-
-    league_page = req_url(league_url)
+    comp_url = CommonAPI.url + '/competitions/LeagueTable?comp_id=%s' % comp_id
+    league_page = req_url(comp_url)
     league_page = bug_fix(league_page)
     parsed_league_page = BeautifulSoup(league_page)
 
-    html_clubs = parsed_league_page.findAll('td', {'class': 'mob tdInline'})
-    for html_club in html_clubs:
+    html_teams = parsed_league_page.findAll('td', {'class': 'mob tdInline'})
+    for html_team in html_teams:
         # TODO add parsing for cups
-        club_name = html_club.find('a').text
-        club_href = html_club.find('a')['href']
-        club_id = club_href.split('club_id=', 1)[1]
+        team_name = html_team.find('a').text
+        club_href = html_team.find('a')['href']
+        team_id = club_href.split('club_id=', 1)[1]
 
-        clubs_for_league.append(HTML_Club(club_id, club_name))
-        Club.add_club(club_id, club_name)
+        clubs_for_league.append(HTML_Club(team_id, team_name))
+        Team.add_info(team_id, team_name, comp_id)
 
-        print club_id, '::', club_name
-        # if not (html_club.find('a').has_key('href')):
-        #     print 'error', html_club
+        print team_id, '::', team_name
+        # if not (html_team.find('a').has_key('href')):
+        #     print 'error', html_team
 
     return clubs_for_league
 
@@ -191,3 +192,15 @@ def get_matches_from_club(comp_id, club_id):
         except Exception:
             print 'Pages end for club=%u comp=%u' % (club_id, comp_id)
             break
+
+
+def get_competitions():
+    # Search all leagues
+    main_page = req_url(CommonAPI.url)
+    parsed_main_page = BeautifulSoup(main_page)
+    api_leagues = get_leagues(parsed_main_page)
+    # search all seasons in leagues
+    get_seasons_for_leagues(api_leagues)
+    # search all matches in league season
+    competitions = [comp for league in api_leagues for comp in league.seasons]
+    return competitions

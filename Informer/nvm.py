@@ -80,28 +80,30 @@ class Player(DID):
         DID.__init__(self, ID, url)
 
 
-class Club(DID):
+class Team(DID):
     list_clubs = {}
     list_clubs_path = DID.path + 'Clubs/__list__.json'
 
     @staticmethod
     def load_club_list():
         try:
-            with open(Club.list_clubs_path) as f:
-                Club.list_clubs = json.load(f)
+            with open(Team.list_clubs_path) as f:
+                Team.list_clubs = json.load(f)
         except EnvironmentError:
             pass
 
     @staticmethod
     def export_club_list():
-        with open(Club.list_clubs_path, 'w') as f:
-            json.dump(Club.list_clubs, f)
+        with open(Team.list_clubs_path, 'w') as f:
+            json.dump(Team.list_clubs, f)
 
     @staticmethod
-    def add_club(club_id, club_name):
-        if club_id not in Club.list_clubs.keys():
-            Club.list_clubs[club_id] = club_name
-            Club.export_club_list()
+    def add_info(team_id, team_name, comp_id):
+        if team_id not in Team.list_clubs.keys():
+            Team.list_clubs[team_id] = {team_name:[comp_id]}
+        else:
+            Team.list_clubs[team_id][team_name].append(comp_id)
+        Team.export_club_list()
 
     def __init__(self, ID, url):
         self.path = DID.path + 'Clubs/'
@@ -114,6 +116,22 @@ class Club(DID):
             self.last_updated = datetime.date.today()
             self.matches.append(match_id)
             self.export_to_file()
+
+
+class Competition(DID):
+    comp_dict = {}
+    path = DID.path + 'competitions.json'
+
+    @staticmethod
+    def export_competitions(d_comps=comp_dict):
+        with open(Competition.path, 'w') as f:
+            json.dump(d_comps, f)
+
+    @staticmethod
+    def import_competitions():
+        with open(Competition.path, 'r') as f:
+            comps = json.load(f)
+        return comps
 
 
 class NVM:
