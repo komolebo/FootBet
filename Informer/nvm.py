@@ -143,8 +143,7 @@ class Competition(DID):
     @staticmethod
     def import_competitions():
         with open(Competition.path, 'r') as f:
-            comps = json.load(f)
-        return comps
+            Competition.comp_dict = json.load(f)
 
 
 class NVM:

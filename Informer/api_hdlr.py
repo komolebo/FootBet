@@ -11,6 +11,7 @@ class Informer:
     @staticmethod
     def init():
         Team.load_club_list()
+        Competition.import_competitions()
 
     @staticmethod
     def update_competitions():  # rare < 10 min
@@ -24,21 +25,24 @@ class Informer:
         main_page = req_url(CommonAPI.url)
         parsed_main_page = BeautifulSoup(main_page)
 
-        api_leagues = get_leagues(parsed_main_page)
+        if Competition.comp_dict.keys():
+            print 'Competitions are loaded before'
+            competitions_list = Competition.comp_dict.keys()
+        else:
+            api_leagues = get_leagues(parsed_main_page)
+            print 'leagues list downloaded'
 
-        print 'leagues list downloaded'
+            get_seasons_for_leagues(api_leagues)
+            print 'seasons are got'
 
-        get_seasons_for_leagues(api_leagues)
-
-        print 'seasons are got'
+            competitions_list = [season.comp_id for league_obj in api_leagues for season in league_obj.seasons]
 
         # search all teams in leagues
         teams = []
 
-        for league_obj in api_leagues:
-            for season in league_obj.seasons:
-                clubs_for_season = get_clubs_from_season_url(season.comp_id)
-                teams.extend(clubs_for_season)
+        for competition in competitions_list:
+            clubs_for_season = get_clubs_from_season_url(competition)
+            teams.extend(clubs_for_season)
 
         Team.set_last_update()
 
