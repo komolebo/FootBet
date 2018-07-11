@@ -2,6 +2,7 @@
 # module should arrange store all info to file system
 import datetime
 import json
+import time
 
 did_table = {}  # table of all did are present in project
 
@@ -83,37 +84,49 @@ class Player(DID):
 class Team(DID):
     list_clubs = {}
     list_clubs_path = DID.path + 'Clubs/__list__.json'
+    last_update = None
 
     @staticmethod
     def load_club_list():
         try:
             with open(Team.list_clubs_path) as f:
-                Team.list_clubs = json.load(f)
+                teams_data = json.load(f)
+                if teams_data.keys():
+                    Team.list_clubs = teams_data['list_clubs']
+                    Team.last_update = teams_data['last_update']
         except EnvironmentError:
             pass
 
     @staticmethod
     def export_club_list():
         with open(Team.list_clubs_path, 'w') as f:
-            json.dump(Team.list_clubs, f)
+            teams_data = {'list_clubs': Team.list_clubs, 'last_update': Team.last_update}
+            json.dump(teams_data, f)
 
     @staticmethod
     def add_info(team_id, team_name, comp_id):
-        if team_id not in Team.list_clubs.keys():
-            Team.list_clubs[team_id] = {team_name:[comp_id]}
-        else:
-            Team.list_clubs[team_id][team_name].append(comp_id)
+        if team_id not in Team.list_clubs.keys():  # check if no club at all
+            team_info = {'name': team_name, 'comps': [comp_id]}
+            Team.list_clubs[team_id] = team_info
+        elif comp_id not in Team.list_clubs[team_id]['comps']:  # check if competition is not been added before
+            Team.list_clubs[team_id]['comps'].append(comp_id)
         Team.export_club_list()
+
+    @staticmethod
+    def set_last_update():
+        Team.last_update = time.time()
+        Team.export_club_list()
+        print 'Teams updated at', time.time()
 
     def __init__(self, ID, url):
         self.path = DID.path + 'Clubs/'
         self.matches = None
-        self.last_updated = None
+        self.last_update = None
         DID.__init__(self, ID, url)
 
     def add_match(self, match_id):
         if not (match_id in self.matches):
-            self.last_updated = datetime.date.today()
+            self.last_update = datetime.date.today()
             self.matches.append(match_id)
             self.export_to_file()
 

@@ -13,20 +13,20 @@ class Informer:
         Team.load_club_list()
 
     @staticmethod
-    def update_competitions():  # rare
+    def update_competitions():  # rare < 10 min
         competitions = get_competitions()
         d_comps = dict((comp.comp_id, comp.name) for comp in competitions)
         Competition.export_competitions(d_comps=d_comps)
 
     @staticmethod
-    def update_teams():
+    def update_teams():  # rare < 20 min
         # Search all leagues
         main_page = req_url(CommonAPI.url)
         parsed_main_page = BeautifulSoup(main_page)
 
         api_leagues = get_leagues(parsed_main_page)
 
-        print 'leagues are got:', api_leagues
+        print 'leagues list downloaded'
 
         get_seasons_for_leagues(api_leagues)
 
@@ -39,6 +39,8 @@ class Informer:
             for season in league_obj.seasons:
                 clubs_for_season = get_clubs_from_season_url(season.comp_id)
                 teams.extend(clubs_for_season)
+
+        Team.set_last_update()
 
         return teams
 
