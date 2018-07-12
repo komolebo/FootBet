@@ -2,7 +2,7 @@ from BeautifulSoup import BeautifulSoup
 
 from Informer.api_data import req_url, CommonAPI
 from Informer.api_parse import get_leagues, get_seasons_for_leagues, get_matches_from_season, \
-    get_competitions, get_clubs_from_season_url
+    get_competitions, get_clubs_from_season_url, get_matches_from_team
 # ********* algorithms to update local data ********* #
 from Informer.nvm import Team, Competition
 
@@ -44,12 +44,24 @@ class Informer:
             clubs_for_season = get_clubs_from_season_url(competition)
             teams.extend(clubs_for_season)
 
-        Team.set_last_update()
+        Team.set_last_update_teams()
 
         return teams
 
     @staticmethod
-    def update_matches_for_team(team_id, comp_id):
+    def update_matches_for_team(team_id):
+        team = Team(team_id)
+        team.load_club_list()
+        comps_list = Team.list_clubs[team_id]['comps']
+        for comp in comps_list:
+            matches_for_comp = get_matches_from_team(comp, team_id)
+            for match in matches_for_comp:
+                team.add_match(comp, match.ID)
+            # TODO add matches for competition
+        team.set_last_update()
+
+    @staticmethod
+    def update_recent_matches_for_team(team_id, comp_id):
         pass
 
     class Rare:
@@ -70,26 +82,6 @@ class Informer:
                     get_matches_from_season(league_obj, season_obj)
                 # print matches_url
 
-        @staticmethod
-        def get_clubs():
-            # Search all leagues
-            main_page = req_url(CommonAPI.url)
-            parsed_main_page = BeautifulSoup(main_page)
-
-            api_leagues = get_leagues(parsed_main_page)
-
-            # search all clubs in leagues
-            clubs = []
-
-            for league_obj in api_leagues:
-                clubs_for_league = get_clubs_from_league(league_obj)
-                clubs.extend(clubs_for_league)
-
-            return clubs
-
-    class Frequent:
-        pass
-
 
 if __name__ == '__main__':
     Informer.init()
@@ -100,4 +92,5 @@ if __name__ == '__main__':
     # get_matches_from_club(586, 5)
 
     # Informer.update_competitions()
-    Informer.update_teams()
+    # Informer.update_teams()
+    Informer.update_matches_for_team(586)

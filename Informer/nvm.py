@@ -113,22 +113,27 @@ class Team(DID):
         Team.export_club_list()
 
     @staticmethod
-    def set_last_update():
+    def set_last_update_teams():
         Team.last_update = time.time()
         Team.export_club_list()
         print 'Teams updated at', time.time()
 
-    def __init__(self, ID, url):
+    def __init__(self, url):
         self.path = DID.path + 'Clubs/'
-        self.matches = None
         self.last_update = None
-        DID.__init__(self, ID, url)
+        self.d_comps = {}
+        DID.__init__(self, None, url)
 
-    def add_match(self, match_id):
-        if not (match_id in self.matches):
-            self.last_update = datetime.date.today()
-            self.matches.append(match_id)
-            self.export_to_file()
+    def add_match(self, comp_id, match_id):
+        if not (comp_id in self.d_comps.keys()):
+            self.d_comps[comp_id] = set(match_id)
+        else:
+            self.d_comps[comp_id].add(match_id)
+        self.export_to_file()
+
+    def set_last_update(self):
+        self.last_update = time.time()
+        self.export_to_file()
 
 
 class Competition(DID):
@@ -163,17 +168,3 @@ class NVM:
             return True
         except EnvironmentError:
             return False
-
-# Local functions
-# def did_init():
-#     for did in did_config_table:
-#         desc = did_config_table[did]
-#         did_obj = DID(did)
-#         did_obj.import_from_file()
-#         did_table[did] = did_obj
-#         # just create file
-#         did_obj.export_to_file()
-
-
-# if __name__ == '__main__':
-#     did_init()

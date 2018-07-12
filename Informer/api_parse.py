@@ -32,6 +32,7 @@ def analyze_match_page(url):
         match.export_to_file()
     else:
         print 'skipping %s' % url
+    return match
 
 
 def analyze_match_general_info(match_page):
@@ -174,11 +175,12 @@ def get_clubs_from_season_url(comp_id):
     return clubs_for_league
 
 
-def get_matches_from_club(comp_id, club_id):
+def get_matches_from_team(comp_id, team_id):
+    matches = []
     for offset in range(0, 10000, 10):
         try:
             url = CommonAPI.url + (
-                    'competitions/LastMatches?comp_id=%s&club_id=%s&offset=%s' % (comp_id, club_id, offset))
+                    'competitions/LastMatches?comp_id=%s&club_id=%s&offset=%s' % (comp_id, team_id, offset))
             # Here we should grab all matches from season
             page = req_url(url)
             parsed_page = BeautifulSoup(page)
@@ -188,10 +190,12 @@ def get_matches_from_club(comp_id, club_id):
                 break
             for html_match in html_matches:
                 match_url = html_match.find('a')['href']
-                analyze_match_page(match_url)
+                match = analyze_match_page(match_url)
+                matches.append(match)
         except Exception:
-            print 'Pages end for club=%u comp=%u' % (club_id, comp_id)
+            print 'Pages end for club=%u comp=%u' % (team_id, comp_id)
             break
+    return matches
 
 
 def get_competitions():
