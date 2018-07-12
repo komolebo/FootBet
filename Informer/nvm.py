@@ -18,6 +18,7 @@ class DID:  # represents data identifier to convert into JSON
             with open(self.path + str(self.ID) + '.json') as f:
                 data = json.load(f)
                 self.__dict__ = json.loads(data)
+                self.ID = int(self.ID)
         except EnvironmentError:
             print 'env imp error'
 
@@ -94,6 +95,16 @@ class Team(DID):
                 if teams_data.keys():
                     Team.list_clubs = teams_data['list_clubs']
                     Team.last_update = teams_data['last_update']
+                    # String -> Int dictionary keys
+                    # Team.list_clubs = {int(k): v for k, v in Team.list_clubs.items()}
+                    Team.list_clubs = {
+                        int(t_id): {
+                            'name': Team.list_clubs[t_id]['name'],
+                            'comps': {
+                                int(c_k): c_v for c_k, c_v in Team.list_clubs[t_id]['comps'].items()
+                            }
+                        }
+                        for t_id in Team.list_clubs.keys()}
         except EnvironmentError:
             pass
 
@@ -104,13 +115,23 @@ class Team(DID):
             json.dump(teams_data, f)
 
     @staticmethod
-    def add_info(team_id, team_name, comp_id):
+    def add_comp_for_team(team_id, team_name, comp_id):
         if team_id not in Team.list_clubs.keys():  # check if no club at all
-            team_info = {'name': team_name, 'comps': [comp_id]}
+            team_info = {'name': team_name, 'comps': {comp_id: []}}
             Team.list_clubs[team_id] = team_info
-        elif comp_id not in Team.list_clubs[team_id]['comps']:  # check if competition is not been added before
-            Team.list_clubs[team_id]['comps'].append(comp_id)
+        elif comp_id not in Team.list_clubs[team_id].keys():  # check if competition is not been added before
+            Team.list_clubs[team_id]['comps'][comp_id] = []
         Team.export_club_list()
+
+    @staticmethod
+    def add_match_to_list(team_id, comp_id, match_id):
+        if team_id not in Team.list_clubs.keys():  # check if no club at all
+            raise Exception('Teams list does not contain team info')
+        elif comp_id not in Team.list_clubs[team_id]['comps'].keys():  # check if competition is not been added before
+            raise Exception('Teams list does not contain competition info')
+        elif match_id not in Team.list_clubs[team_id]['comps'][comp_id]:
+            Team.list_clubs[team_id]['comps'][comp_id].append(match_id)
+            Team.export_club_list()
 
     @staticmethod
     def set_last_update_teams():
@@ -118,22 +139,24 @@ class Team(DID):
         Team.export_club_list()
         print 'Teams updated at', time.time()
 
-    def __init__(self, url):
+    def __init__(self, ID):
         self.path = DID.path + 'Clubs/'
         self.last_update = None
         self.d_comps = {}
-        DID.__init__(self, None, url)
+        DID.__init__(self, ID, None)
 
     def add_match(self, comp_id, match_id):
         if not (comp_id in self.d_comps.keys()):
-            self.d_comps[comp_id] = set(match_id)
-        else:
-            self.d_comps[comp_id].add(match_id)
+            self.d_comps[comp_id] = [match_id]
+        elif not (match_id in self.d_comps[comp_id]):
+            self.d_comps[comp_id].append(match_id)
         self.export_to_file()
+        Team.add_match_to_list(self.ID, comp_id, match_id)
 
     def set_last_update(self):
         self.last_update = time.time()
         self.export_to_file()
+        print 'Setting last update:', time.time()
 
 
 class Competition(DID):

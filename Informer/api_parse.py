@@ -7,7 +7,7 @@ from Informer.nvm import Match, NVM, Team
 def analyze_match_page(url):
     id = url.split('match_id=', 1)[1].split('&')[0]
 
-    match = Match(id, url)
+    match = Match(int(id), url)
     if not NVM.check_obj_in_nvm(NVM.PATH_MATCHES, id):  # match.exists_in_nvm():
         page = req_url(url)
         match_page = BeautifulSoup(page)
@@ -62,7 +62,9 @@ def analyze_match_events(match_page):
     events = []
     event_tags = match_page.findAll('div', {'class': 'matchReportSubInt'})
     for event in event_tags:
-        events.append((event.find('p').text, event.find('small').text))
+        event_text = event.find('p').text
+        event_additional_text_info = event.find('small').text if event.find('small') else None
+        events.append((event_text, event_additional_text_info))
     return events
 
 
@@ -166,7 +168,7 @@ def get_clubs_from_season_url(comp_id):
         team_id = club_href.split('club_id=', 1)[1]
 
         clubs_for_league.append(HTML_Club(team_id, team_name))
-        Team.add_info(team_id, team_name, comp_id)
+        Team.add_comp_for_team(team_id, team_name, comp_id)
 
         print team_id, '::', team_name
         # if not (html_team.find('a').has_key('href')):
@@ -178,23 +180,23 @@ def get_clubs_from_season_url(comp_id):
 def get_matches_from_team(comp_id, team_id):
     matches = []
     for offset in range(0, 10000, 10):
-        try:
-            url = CommonAPI.url + (
-                    'competitions/LastMatches?comp_id=%s&club_id=%s&offset=%s' % (comp_id, team_id, offset))
-            # Here we should grab all matches from season
-            page = req_url(url)
-            parsed_page = BeautifulSoup(page)
+        # try:
+        url = CommonAPI.url + (
+                'competitions/LastMatches?comp_id=%s&club_id=%s&offset=%s' % (comp_id, team_id, offset))
+        # Here we should grab all matches from season
+        page = req_url(url)
+        parsed_page = BeautifulSoup(page)
 
-            html_matches = parsed_page.findAll('span', {'class': 'matchVs'})
-            if not len(html_matches):  # All matches are processed
-                break
-            for html_match in html_matches:
-                match_url = html_match.find('a')['href']
-                match = analyze_match_page(match_url)
-                matches.append(match)
-        except Exception:
-            print 'Pages end for club=%u comp=%u' % (team_id, comp_id)
+        html_matches = parsed_page.findAll('span', {'class': 'matchVs'})
+        if not len(html_matches):  # All matches are processed
             break
+        for html_match in html_matches:
+            match_url = html_match.find('a')['href']
+            match = analyze_match_page(match_url)
+            matches.append(match)
+        # except Exception:
+        #     print 'Pages end for club=%u comp=%u' % (team_id, comp_id)
+        #     break
     return matches
 
 

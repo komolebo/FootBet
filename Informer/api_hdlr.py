@@ -50,8 +50,8 @@ class Informer:
 
     @staticmethod
     def update_matches_for_team(team_id):
+        Team.load_club_list()
         team = Team(team_id)
-        team.load_club_list()
         comps_list = Team.list_clubs[team_id]['comps']
         for comp in comps_list:
             matches_for_comp = get_matches_from_team(comp, team_id)
@@ -91,6 +91,9 @@ if __name__ == '__main__':
     # all_clubs = get_all_clubs()
     # get_matches_from_club(586, 5)
 
+    # 1.
     # Informer.update_competitions()
+    # 2.
     # Informer.update_teams()
-    Informer.update_matches_for_team(586)
+    # 3.
+    Informer.update_matches_for_team(14)
