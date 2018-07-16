@@ -99,14 +99,17 @@ class DrawNN:
         self.neural_network = neural_network
 
     def draw(self):
-        widest_layer = max(self.neural_network.layers)
+        widest_layer = max(self.neural_network)
         network = NeuralNetwork(widest_layer)
         for l in self.neural_network:
             network.add_layer(l)
         network.draw()
 
 
-n_network = NeuralNetwork(10)
-n_network.add_layer(10)
-n_network.add_layer(10)
-n_network.draw()
+# n_network = NeuralNetwork(10)
+# n_network.add_layer(10)
+# n_network.add_layer(10)
+# n_network.draw()
+
+network = DrawNN( [2,8,8,1] )
+network.draw()
